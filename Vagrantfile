@@ -72,10 +72,6 @@ Vagrant.configure("2") do |config|
 	mysql -u root -e "DELETE FROM mysql.user WHERE User=''"
 	mysql -u root -e "DROP DATABASE test"
 	mysql -u root -e "FLUSH PRIVILEGES"
-	# add site user and schema
-	mysql -u root -e "CREATE DATABASE wexer"
-	mysql -u root -e "CREATE USER 'wexer'@'localhost' IDENTIFIED BY ''"
-	mysql -u root -e "GRANT ALL PRIVILEGES ON wexer.* TO 'wexer'@'localhost'"	
 	
 	############ Apache (HTTPD) ################
 	# install
@@ -101,16 +97,25 @@ Vagrant.configure("2") do |config|
 	# composer
 	yum -y install composer
 	
+	################ Setup Project ############
+	# composer install
+	composer install
+	# setup environment
+	cp .env.vagrant .env	
+	php artisan key:generate
+	# setup / migrate database
+	mysql -u root -e "CREATE DATABASE wexer"
+	mysql -u root -e "CREATE USER 'wexer'@'localhost' IDENTIFIED BY ''"
+	mysql -u root -e "GRANT ALL PRIVILEGES ON wexer.* TO 'wexer'@'localhost'"
+	php artisan migrate --seed	
+	
 	########### Environment ################
 	# symlink to sync (site) folder
 	ln -s /var/www/wexer sync
 	# remove root password
 	passwd -d root
-	
-	## test shenanigans
+	# remove www/html	
 	rmdir /var/www/html
-	mkdir /var/www/wexer/public
-	printf '<?php phpinfo();\n' > /var/www/wexer/public/index.php
 	
   SHELL
   
